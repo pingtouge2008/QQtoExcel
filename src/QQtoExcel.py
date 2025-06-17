@@ -1,6 +1,7 @@
 import os
 import re
 from typing import List, Tuple
+from datetime import datetime
 
 from tqdm import tqdm
 
@@ -78,6 +79,23 @@ class QQtoExcel:
         if cont_list_out:
             self.row.append(cont_row_text)
 
+    def _format_time(self, time_str: str) -> str:
+        """
+        根据导出格式和UID导出状态格式化时间字符串。
+
+        :param time_str: 原始时间字符串
+        :return: 格式化后的时间字符串
+        """
+        if self.export_format == 'csv':
+            try:
+                # 解析原始时间字符串
+                dt = datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+                # 只返回日期部分
+                return dt.strftime('%Y-%m-%d')
+            except ValueError:
+                return time_str
+        return time_str
+
     def get_QQChat_record(self) -> Tuple[List[str], List[List[List[str]]]]:
         """
         读取 QQ 聊天记录并生成对象。
@@ -151,7 +169,7 @@ class QQtoExcel:
                                 if self.cont_row_text in self.row:
                                     cont_text = data_clean(j[4])
                                     if self.cont_nil_out:
-                                        cont_text = re.sub(f'\[(图片|语音|表情|QQ红包)]', "", cont_text)
+                                        cont_text = re.sub(r'\[(图片|语音|表情|QQ红包)]', "", cont_text)
                                         if len(cont_text.strip()) > 0:
                                             cont_list.append(cont_text)
                                         else:
@@ -159,7 +177,7 @@ class QQtoExcel:
                                     else:
                                         cont_list.append(cont_text)
                                 if self.time_row_text in self.row:
-                                    time_list.append(j[0])
+                                    time_list.append(self._format_time(j[0]))
                                 if self.name_row_text in self.row:
                                     cleaned_data = data_clean(j[1].replace(j[2], ''))
                                     cleaned_data = re.sub(r'[\r\n]+', '', cleaned_data)
